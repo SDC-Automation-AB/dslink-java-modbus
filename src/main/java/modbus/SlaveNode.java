@@ -113,11 +113,16 @@ public class SlaveNode extends SlaveFolder {
 		act.addParameter(
 				new Parameter(ModbusConnection.ATTR_SUPPRESS_NON_COV_DURATION, ValueType.NUMBER, new Value(defdur))
 						.setDescription("how many seconds to wait before sending an update for an unchanged value"));
-		new Parameter(ModbusConnection.ATTR_PING_TYPE, ValueType.NUMBER, new Value(0));
+		String pingType = ModbusConnection.ATTR_PING_TYPE_HOLDING;
+		int pingRegister = 0;
+		if (node.getAttribute(ModbusConnection.ATTR_PING_TYPE) != null) {
+			pingType = node.getAttribute(ModbusConnection.ATTR_PING_TYPE).getString();
+			pingRegister = node.getAttribute(ModbusConnection.ATTR_PING_REGISTER).getNumber().intValue();
+		}
 		act.addParameter(
-				new Parameter(ModbusConnection.ATTR_PING_TYPE, ValueType.makeEnum(Util.enumNames(PingType.class))));
-		int pingReg = node.getAttribute(ModbusConnection.ATTR_PING_REGISTER).getNumber().intValue();
-		act.addParameter(new Parameter(ModbusConnection.ATTR_PING_REGISTER, ValueType.NUMBER, new Value(pingReg)));
+				new Parameter(ModbusConnection.ATTR_PING_TYPE, ValueType.makeEnum(Util.enumNames(PingType.class)),
+						new Value(pingType)));
+		act.addParameter(new Parameter(ModbusConnection.ATTR_PING_REGISTER, ValueType.NUMBER, new Value(pingRegister)));
 
 		Node anode = node.getChild(ACTION_EDIT, true);
 		if (anode == null)
@@ -149,7 +154,6 @@ public class SlaveNode extends SlaveFolder {
 			String pingType = event.getParameter(ModbusConnection.ATTR_PING_TYPE, ValueType.STRING).getString();
 			int pingRegister = event.getParameter(ModbusConnection.ATTR_PING_REGISTER, ValueType.NUMBER).getNumber()
 					.intValue();
-
 			node.setAttribute(ModbusConnection.ATTR_SLAVE_ID, new Value(slaveid));
 			node.setAttribute(ModbusConnection.ATTR_POLLING_INTERVAL, new Value(intervalInMs));
 			node.setAttribute(ModbusConnection.ATTR_ZERO_ON_FAILED_POLL, new Value(zerofail));
@@ -416,16 +420,16 @@ public class SlaveNode extends SlaveFolder {
 	@Override
 	void checkDeviceConnected() {
 		int slaveId = node.getAttribute(ATTR_SLAVE_ID).getNumber().intValue();
-		String pingType = node.getAttribute(ATTR_SLAVE_ID).getString();
-		Number slaveOffset = node.getAttribute(ATTR_SLAVE_ID).getNumber();
+		Value pingType = node.getAttribute(ModbusConnection.ATTR_PING_TYPE);
+		Value slaveOffset = node.getAttribute(ModbusConnection.ATTR_PING_REGISTER);
 
 		synchronized (conn.masterLock) {
 			boolean connected = false;
 			if (conn.master != null) {
 				try {
 					if (pingType != null && slaveOffset != null) {
-						connected = Util.pingModbusSlave(conn.master, slaveId, pingType.toString(),
-								slaveOffset.intValue());
+						connected = Util.pingModbusSlave(conn.master, slaveId, pingType.getString().toString(),
+								slaveOffset.getNumber().intValue());
 					} else
 						connected = Util.pingModbusSlave(conn.master, slaveId);
 				} catch (Exception e) {
