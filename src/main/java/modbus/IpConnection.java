@@ -170,12 +170,19 @@ public class IpConnection extends ModbusConnection {
 			Node deviceNode = node.createChild(name, true).build();
 
 			int slaveid = event.getParameter(ATTR_SLAVE_ID, ValueType.NUMBER).getNumber().intValue();
-			long intervalMs = (long) (event.getParameter(ATTR_POLLING_INTERVAL, ValueType.NUMBER).getNumber().doubleValue()
+			long intervalMs = (long) (event.getParameter(ATTR_POLLING_INTERVAL, ValueType.NUMBER).getNumber()
+					.doubleValue()
 					* 1000);
 			boolean zerofail = event.getParameter(ATTR_ZERO_ON_FAILED_POLL, ValueType.BOOL).getBool();
 			boolean batchpoll = event.getParameter(ATTR_USE_BATCH_POLLING, ValueType.BOOL).getBool();
 			boolean contig = event.getParameter(ATTR_CONTIGUOUS_BATCH_REQUEST_ONLY, ValueType.BOOL).getBool();
-			long suppressDuration = (long) (event.getParameter(ModbusConnection.ATTR_SUPPRESS_NON_COV_DURATION, ValueType.NUMBER).getNumber().doubleValue() * 1000);
+			long suppressDuration = (long) (event
+					.getParameter(ModbusConnection.ATTR_SUPPRESS_NON_COV_DURATION, ValueType.NUMBER).getNumber()
+					.doubleValue() * 1000);
+
+			String pingType = event.getParameter(ModbusConnection.ATTR_PING_TYPE, ValueType.STRING).getString();
+			int pingRegister = event.getParameter(ModbusConnection.ATTR_PING_REGISTER, ValueType.NUMBER).getNumber()
+					.intValue();
 
 			deviceNode.setAttribute(ATTR_SLAVE_ID, new Value(slaveid));
 			deviceNode.setAttribute(ATTR_POLLING_INTERVAL, new Value(intervalMs));
@@ -183,6 +190,8 @@ public class IpConnection extends ModbusConnection {
 			deviceNode.setAttribute(ATTR_USE_BATCH_POLLING, new Value(batchpoll));
 			deviceNode.setAttribute(ATTR_CONTIGUOUS_BATCH_REQUEST_ONLY, new Value(contig));
 			deviceNode.setAttribute(ATTR_SUPPRESS_NON_COV_DURATION, new Value(suppressDuration));
+			deviceNode.setAttribute(ATTR_PING_TYPE, new Value(pingType));
+			deviceNode.setAttribute(ATTR_PING_REGISTER, new Value(pingRegister));
 
 			new SlaveNode(conn, deviceNode);
 		}

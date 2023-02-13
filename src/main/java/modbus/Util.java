@@ -4,6 +4,8 @@ import com.serotonin.modbus4j.ModbusMaster;
 import com.serotonin.modbus4j.exception.ModbusTransportException;
 import com.serotonin.modbus4j.locator.NumericLocator;
 import com.serotonin.modbus4j.locator.StringLocator;
+import com.serotonin.modbus4j.msg.ReadHoldingRegistersRequest;
+import com.serotonin.modbus4j.msg.ReadInputRegistersRequest;
 import com.serotonin.modbus4j.msg.ReportSlaveIdRequest;
 import java.util.Arrays;
 import java.util.regex.Pattern;
@@ -14,9 +16,15 @@ import org.dsa.iot.dslink.node.value.ValueType;
 import org.dsa.iot.dslink.util.json.JsonArray;
 
 public class Util {
-	
+
 	public static boolean pingModbusSlave(ModbusMaster master, int slaveId) {
-		if (master.testSlaveNode(slaveId)) {
+		return pingModbusSlave(master, slaveId, ModbusConnection.ATTR_PING_TYPE_HOLDING, 0);
+
+	}
+
+	public static boolean pingModbusSlave(ModbusMaster master, int slaveId, String type, int offset) {
+
+		if (testSlaveNodeVariableValue(master, slaveId, type, offset)) {
 			return true;
 		}
 		try {
@@ -175,4 +183,21 @@ public class Util {
 		}
 		return ret;
 	}
+
+	public static boolean testSlaveNodeVariableValue(ModbusMaster master, int node, String type, int offset) {
+		try {
+			if (type == ModbusConnection.ATTR_PING_TYPE_HOLDING) {
+				master.send(new ReadHoldingRegistersRequest(node, offset, 1));
+			}
+			if (type == ModbusConnection.ATTR_PING_TYPE_INPUT) {
+				master.send(new ReadInputRegistersRequest(node, offset, 1));
+			}
+		} catch (ModbusTransportException e) {
+			// If there was a transport exception, there's no node there.
+			return false;
+		}
+
+		return true;
+	}
+
 }

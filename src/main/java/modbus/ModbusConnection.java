@@ -43,6 +43,11 @@ abstract public class ModbusConnection {
 	static final String ATTR_CONTIGUOUS_BATCH_REQUEST_ONLY = "contiguous batch requests only";
 	static final String ATTR_SUPPRESS_NON_COV_DURATION = "suppress non-cov update duration";
 
+	static final String ATTR_PING_TYPE = "Ping type";
+	static final String ATTR_PING_TYPE_HOLDING = "HOLDING";
+	static final String ATTR_PING_TYPE_INPUT = "INPUT";
+	static final String ATTR_PING_REGISTER = "Ping adress";
+
 	static final String ATTR_CONNECTION_NAME = "name";
 	static final String ATTR_TRANSPORT_TYPE = "transport type";
 	static final String ATTR_TIMEOUT = "Timeout";
@@ -280,7 +285,10 @@ abstract public class ModbusConnection {
 		act.addParameter(new Parameter(ATTR_ZERO_ON_FAILED_POLL, ValueType.BOOL, new Value(false)));
 		act.addParameter(new Parameter(ATTR_USE_BATCH_POLLING, ValueType.BOOL, new Value(true)));
 		act.addParameter(new Parameter(ATTR_CONTIGUOUS_BATCH_REQUEST_ONLY, ValueType.BOOL, new Value(false)));
-		act.addParameter(new Parameter(ModbusConnection.ATTR_SUPPRESS_NON_COV_DURATION, ValueType.NUMBER, new Value(60)).setDescription("how many seconds to wait before sending an update for an unchanged value"));
+		act.addParameter(new Parameter(ModbusConnection.ATTR_SUPPRESS_NON_COV_DURATION, ValueType.NUMBER, new Value(60))
+				.setDescription("how many seconds to wait before sending an update for an unchanged value"));
+		act.addParameter(new Parameter(ATTR_PING_TYPE, ValueType.makeEnum(Util.enumNames(PingType.class))));
+		act.addParameter(new Parameter(ATTR_PING_REGISTER, ValueType.NUMBER, new Value(0)));
 		return act;
 	}
 
