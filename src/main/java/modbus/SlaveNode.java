@@ -108,9 +108,21 @@ public class SlaveNode extends SlaveFolder {
 				node.getAttribute(ModbusConnection.ATTR_USE_BATCH_POLLING)));
 		act.addParameter(new Parameter(ModbusConnection.ATTR_CONTIGUOUS_BATCH_REQUEST_ONLY, ValueType.BOOL,
 				node.getAttribute(ModbusConnection.ATTR_CONTIGUOUS_BATCH_REQUEST_ONLY)));
-		double defdur = node.getAttribute(ModbusConnection.ATTR_SUPPRESS_NON_COV_DURATION).getNumber().doubleValue() / 1000;
-		act.addParameter(new Parameter(ModbusConnection.ATTR_SUPPRESS_NON_COV_DURATION, ValueType.NUMBER, new Value(defdur))
-				.setDescription("how many seconds to wait before sending an update for an unchanged value"));
+		double defdur = node.getAttribute(ModbusConnection.ATTR_SUPPRESS_NON_COV_DURATION).getNumber().doubleValue()
+				/ 1000;
+		act.addParameter(
+				new Parameter(ModbusConnection.ATTR_SUPPRESS_NON_COV_DURATION, ValueType.NUMBER, new Value(defdur))
+						.setDescription("how many seconds to wait before sending an update for an unchanged value"));
+		String pingType = ModbusConnection.ATTR_PING_TYPE_HOLDING;
+		int pingRegister = 0;
+		if (node.getAttribute(ModbusConnection.ATTR_PING_TYPE) != null) {
+			pingType = node.getAttribute(ModbusConnection.ATTR_PING_TYPE).getString();
+			pingRegister = node.getAttribute(ModbusConnection.ATTR_PING_REGISTER).getNumber().intValue();
+		}
+		act.addParameter(
+				new Parameter(ModbusConnection.ATTR_PING_TYPE, ValueType.makeEnum(Util.enumNames(PingType.class)),
+						new Value(pingType)));
+		act.addParameter(new Parameter(ModbusConnection.ATTR_PING_REGISTER, ValueType.NUMBER, new Value(pingRegister)));
 
 		Node anode = node.getChild(ACTION_EDIT, true);
 		if (anode == null)
@@ -136,14 +148,20 @@ public class SlaveNode extends SlaveFolder {
 			boolean batchpoll = event.getParameter(ModbusConnection.ATTR_USE_BATCH_POLLING, ValueType.BOOL).getBool();
 			boolean contig = event.getParameter(ModbusConnection.ATTR_CONTIGUOUS_BATCH_REQUEST_ONLY, ValueType.BOOL)
 					.getBool();
-			long suppressDuration = (long) (event.getParameter(ModbusConnection.ATTR_SUPPRESS_NON_COV_DURATION, ValueType.NUMBER).getNumber().doubleValue() * 1000);
-
+			long suppressDuration = (long) (event
+					.getParameter(ModbusConnection.ATTR_SUPPRESS_NON_COV_DURATION, ValueType.NUMBER).getNumber()
+					.doubleValue() * 1000);
+			String pingType = event.getParameter(ModbusConnection.ATTR_PING_TYPE, ValueType.STRING).getString();
+			int pingRegister = event.getParameter(ModbusConnection.ATTR_PING_REGISTER, ValueType.NUMBER).getNumber()
+					.intValue();
 			node.setAttribute(ModbusConnection.ATTR_SLAVE_ID, new Value(slaveid));
 			node.setAttribute(ModbusConnection.ATTR_POLLING_INTERVAL, new Value(intervalInMs));
 			node.setAttribute(ModbusConnection.ATTR_ZERO_ON_FAILED_POLL, new Value(zerofail));
 			node.setAttribute(ModbusConnection.ATTR_USE_BATCH_POLLING, new Value(batchpoll));
 			node.setAttribute(ModbusConnection.ATTR_CONTIGUOUS_BATCH_REQUEST_ONLY, new Value(contig));
 			node.setAttribute(ModbusConnection.ATTR_SUPPRESS_NON_COV_DURATION, new Value(suppressDuration));
+			node.setAttribute(ModbusConnection.ATTR_PING_TYPE, new Value(pingType));
+			node.setAttribute(ModbusConnection.ATTR_PING_REGISTER, new Value(pingRegister));
 
 			conn.getLink().handleEdit(root);
 
@@ -402,12 +420,18 @@ public class SlaveNode extends SlaveFolder {
 	@Override
 	void checkDeviceConnected() {
 		int slaveId = node.getAttribute(ATTR_SLAVE_ID).getNumber().intValue();
+		Value pingType = node.getAttribute(ModbusConnection.ATTR_PING_TYPE);
+		Value slaveOffset = node.getAttribute(ModbusConnection.ATTR_PING_REGISTER);
 
 		synchronized (conn.masterLock) {
 			boolean connected = false;
 			if (conn.master != null) {
 				try {
-					connected = Util.pingModbusSlave(conn.master, slaveId);
+					if (pingType != null && slaveOffset != null) {
+						connected = Util.pingModbusSlave(conn.master, slaveId, pingType.getString().toString(),
+								slaveOffset.getNumber().intValue());
+					} else
+						connected = Util.pingModbusSlave(conn.master, slaveId);
 				} catch (Exception e) {
 					LOGGER.debug("error during device ping: ", e);
 				}
