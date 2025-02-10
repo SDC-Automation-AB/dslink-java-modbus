@@ -7,13 +7,17 @@ targetCompatibility = JavaVersion.VERSION_1_8
 version = '1.0.0'
 
 repositories {
+    maven {
+        url 'https://repo.sdc-automation.se/releases'
+        credentials {
+            username = System.getenv("SDC_REPO_USER")
+            password = System.getenv("SDC_REPO_USER_TOKEN")
+        }
+    }
     mavenLocal()
     mavenCentral()
     maven {
     	url 'https://maven.mangoautomation.net/repository/ias-release/'
-    }
-    maven {
-        url 'https://jitpack.io'
     }
     maven {
         url 'http://maven.scijava.org/content/repositories/public/'
